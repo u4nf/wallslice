@@ -24,7 +24,8 @@ def getLargestAxis(outRes):
 			if i[0] > largestAxis[1]:
 				#new x axis
 				largestAxis[1] = i[0]
-				largestAxis[3] = (i[0], i[1])
+				largestAxis[3] = (i[0], i[1], i[2])
+				anchorDisplay = largestAxis[3]
 
 			if i[1] > largestAxis[2]:
 				#new y axis
@@ -37,12 +38,26 @@ def getLargestAxis(outRes):
 			else:
 				largestAxis[0] = '1'
 
-	return largestAxis
+
+	return largestAxis, anchorDisplay
 
 
 def validate(largestAxis):
 	"""calculate total output resolution, verify source img resoulution sufficient
 	"""
+
+	def createResized(x, y):
+		"""IN PROGRESS - RESIZE SOURCE IMAGE TO LARGEST AXIS"""
+
+		if x > y:
+			ratio = sourceY / sourceX
+
+			x = sourceX * ratio
+			y = sourceY * ratio
+
+		print('source x {} source y {} \nscreen x {} screen y {} \nrezized x {} resized y {}'.format(sourceX, sourceY, totalX, totalY, x, y))
+
+
 
 	#minimum output resolution required (based on 'outRes')
 	totalX, totalY = 0, 0
@@ -69,6 +84,7 @@ def validate(largestAxis):
 		print("Source image too small")
 		exit(1)
 
+	createResized(totalX, totalY)
 
 def calcTempDims():
 	"""calculate initial output image dimensions prior to resizing"""
@@ -98,14 +114,27 @@ def calcTempDims():
 def make():
 	#Crops the images out of the source at the highest resolution required
 
-	"""
 	def resize(tempImg, x, y, z):
 
 		ox = tempImg.size[0]
 		oy = tempImg.size[1]
 
-		tempImg = tempImg.crop(0, )
-	"""
+
+		if y > x:
+			tempImg.rotate(90)
+			cropPercent = ((largestAxis[3][0] / x) * (anchorDisplay[2] / z *.095))
+			tempImg = tempImg.crop((ox * cropPercent, (oy * cropPercent), ox, oy))
+			tempImg.rotate(270)
+			tempImg = tempImg.resize((x, y))
+		
+		else:
+			cropPercent = ((largestAxis[3][1] / y) * (anchorDisplay[2] / z *.095))
+			tempImg = tempImg.crop((ox * cropPercent, (oy * cropPercent), ox, oy))
+			tempImg = tempImg.resize((x, y))
+
+		return tempImg
+
+
 
 	#list containing the output images
 	outImages = []
@@ -137,75 +166,21 @@ def make():
 		except:
 			pass
 
-		#outImage = resize(outImage, outRes[h][0], outRes[h][1], outRes[h][2])
+		#outImage.save(str(h) + '000.jpg')
+
+		if (outRes[h][0] != anchorDisplay[0]) and (outRes[h][1] != anchorDisplay[1]):
+			outImage = resize(outImage, outRes[h][0], outRes[h][1], outRes[h][2])
 
 		outImage.save(str(h) + '.jpg')
 
 
 
 
-largestAxis = getLargestAxis(outRes)
+largestAxis, anchorDisplay = getLargestAxis(outRes)
 
 validate(largestAxis)
 
 tempDims = calcTempDims()
 
 make()
-
-"""
-
-
-ox = out0.size[0]
-oy = out0.size[1]
-
-out0 = out0.crop(((ox * .15), (oy * .15), ox, oy))
-out0 = out0.resize((1920, 1080))
-out0.save('0.jpg')
-
-out1 = img.crop((workingX + bezels0, (sy - (1440 + vertMonOffset)), (workingX + bezels0 + 2560), (sy - vertMonOffset)))
-out1.save('1.jpg')
-
-workingX += (2560 + bezels0 + bezels1)
-
-out2 = img.crop((workingX, (sy - 2560), workingX + 1440, sy))
-
-ox = out0.size[0]
-oy = out0.size[1]
-
-out0 = out0.crop(((ox * .15), (oy * .15), ox, oy))
-out2 = out2.resize((1080, 1920))
-out2.save('2.jpg')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def make(outRes):
-	workingX = 0
-
-	for i, j in enumerate(outRes):
-		output = img.crop((workingX, (sy - j[1]), (workingX + j[0]), sy))
-		workingX += j[0]
-
-		output.save('{}.jpg'.format(i))
-"""
+exit(0)
